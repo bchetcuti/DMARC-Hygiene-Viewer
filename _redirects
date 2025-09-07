@@ -1,0 +1,7 @@
+# Redirects
+# Ensure root access loads the viewer
+/           /dmarc-viewer.html   200
+
+# Optional: Redirect legacy paths or vanity URLs
+/dmarc      /dmarc-viewer.html   200
+/viewer     /dmarc-viewer.html   200
