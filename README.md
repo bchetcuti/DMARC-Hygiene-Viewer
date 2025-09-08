@@ -35,13 +35,10 @@ Badges are rendered inline using SVG for symbolic clarity.
 - Ideal for internal hygiene checks or personal ops validation  
 - CSP and security headers enforced via Cloudflare Rules or Workers
 
-
 ## 📦 Future Extensions
 
-- Trendline generation across multiple reports  
-- Export to JSON or CSV  
-- Integration with governance dashboards  
+- TBA
 
 ## 🧩 Why It Exists
 
-This tool was built to support modular, emotionally honest hygiene workflows—especially for those who value clarity, autonomy, and symbolic UX. It reflects a philosophy of quiet rigor, operational maturity, and trust signaling without external dependencies.
+This tool was built to so I didn't have to try and read DMARC reports

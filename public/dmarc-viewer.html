@@ -1,191 +1,96 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
-
   <title>DMARC Hygiene Viewer</title>
-
   <style>
-
     body { font-family: sans-serif; padding: 2em; background: #fdfdfd; }
-
     h1 { margin-bottom: 0.5em; }
-
     input[type="file"] { margin-bottom: 1em; }
-
     .summary { background: #f0f8ff; padding: 1em; border: 1px solid #ccc; margin-bottom: 1em; }
-
     table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-
     th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; vertical-align: middle; }
-
     th { background: #e0e0e0; }
-
     .flagged { background-color: #ffe6e6; }
-
     .badge { width: 24px; height: 24px; display: inline-block; vertical-align: middle; }
-
   </style>
-
 </head>
-
 <body>
-
   <h1>DMARC Hygiene Viewer</h1>
-
   <input type="file" id="fileInput" accept=".xml">
-
   <div id="output"></div>
-
- 
-
-  <script>
-
+   <script>
     const svgBadges = {
-
       verified: `<svg class="badge" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#4CAF50"/><path d="M8 12l2 2 4-4" stroke="#fff" stroke-width="2" fill="none"/></svg>`,
-
       partial: `<svg class="badge" viewBox="0 0 24 24"><polygon points="12,2 22,20 2,20" fill="#FFC107"/><line x1="12" y1="8" x2="12" y2="14" stroke="#000" stroke-width="2"/><circle cx="12" cy="17" r="1.5" fill="#000"/></svg>`,
-
       flagged: `<svg class="badge" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#F44336"/><line x1="8" y1="8" x2="16" y2="16" stroke="#fff" stroke-width="2"/><line x1="16" y1="8" x2="8" y2="16" stroke="#fff" stroke-width="2"/></svg>`
-
     };
 
- 
-
     function getBadgeSVG(spf, dkim, disposition) {
-
       const verified = spf === 'pass' && dkim === 'pass' && disposition === 'pass';
-
       const partial = spf === 'pass' || dkim === 'pass';
-
       if (verified) return svgBadges.verified;
-
       if (partial) return svgBadges.partial;
-
       return svgBadges.flagged;
-
     }
-
  
-
     document.getElementById('fileInput').addEventListener('change', async (event) => {
-
       const file = event.target.files[0];
-
       if (!file) return;
 
- 
-
       const text = await file.text();
-
       const parser = new DOMParser();
-
       const xml = parser.parseFromString(text, 'application/xml');
 
- 
-
       const domain = xml.querySelector('policy_published domain')?.textContent || 'Unknown';
-
       const policy = xml.querySelector('policy_published p')?.textContent || 'none';
-
       const records = [...xml.querySelectorAll('record')].map(record => {
 
         const sourceIp = record.querySelector('source_ip')?.textContent;
-
         const count = parseInt(record.querySelector('count')?.textContent || '0');
-
         const spf = record.querySelector('spf result')?.textContent;
-
         const dkim = record.querySelector('dkim result')?.textContent;
-
         const disposition = record.querySelector('policy_evaluated disposition')?.textContent;
-
  
-
         const dmarcPass = (spf === 'pass' && dkim === 'pass' && disposition === 'pass');
-
         const flagged = (!dmarcPass && disposition === 'none' && count > 10);
-
         const badgeSVG = getBadgeSVG(spf, dkim, disposition);
 
- 
-
         return { sourceIp, count, spf, dkim, disposition, badgeSVG, flagged };
-
       });
-
- 
 
       const passRate = Math.round((records.filter(r => r.spf === 'pass' && r.dkim === 'pass').length / records.length) * 100);
-
       const verifiedCount = records.filter(r => r.badgeSVG === svgBadges.verified).length;
 
- 
-
       let html = `
-
         <div class="summary">
-
           <strong>Domain:</strong> ${domain} |
-
           <strong>Policy:</strong> ${policy} |
-
           <strong>Pass Rate:</strong> ${passRate}% |
-
           <strong>Verified Senders:</strong> ${verifiedCount}
-
         </div>
-
         <table>
-
           <tr>
-
             <th>Source IP</th><th>Count</th><th>SPF</th><th>DKIM</th><th>Disposition</th><th>Trust Badge</th>
-
           </tr>
-
       `;
 
- 
-
       records.forEach(r => {
-
         html += `
-
           <tr class="${r.flagged ? 'flagged' : ''}">
-
             <td>${r.sourceIp}</td>
-
             <td>${r.count}</td>
-
             <td>${r.spf}</td>
-
             <td>${r.dkim}</td>
-
             <td>${r.disposition}</td>
-
             <td>${r.badgeSVG}</td>
-
           </tr>
-
         `;
-
       });
-
  
-
       html += `</table>`;
-
       document.getElementById('output').innerHTML = html;
-
     });
-
   </script>
-
 </body>
-
 </html>
